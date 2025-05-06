@@ -17,29 +17,38 @@ module Chat
 
       loop do
         conn, _ = @server.accept
+        handle_conn conn
+      end
+    end
 
-        Thread.new do
-          username = conn.gets(chomp: true).to_sym
+    private
 
-          @mutex.synchronize do
-            @connections[username] = conn
-            puts "online users: #{@connections.keys}"
-          end
+    def set_username(conn)
+      username = conn.gets(chomp: true).to_sym
 
-          loop do
-            command_str = conn.gets chomp: true
-            command, receiver, msg = command_str.split ' ', 3
+      @mutex.synchronize do
+        @connections[username] = conn
+        puts "online users: #{@connections.keys}"
+      end
 
-            if command.eql? '/s'
-              sent_at = Time.now.strftime '%H:%M:%S'
-              @mutex.synchronize { @connections[receiver.to_sym].puts "[#{sent_at}] #{username}> #{msg}" }
-              conn.puts "[#{sent_at}] me> #{msg}"
-            end
+      username
+    end
+
+    def handle_conn(conn)
+      Thread.new do
+        username = set_username conn
+
+        loop do
+          command_str = conn.gets chomp: true
+          command, receiver, msg = command_str.split ' ', 3
+
+          if command.eql? '/s'
+            sent_at = Time.now.strftime '%H:%M:%S'
+            @mutex.synchronize { @connections[receiver.to_sym].puts "[#{sent_at}] #{username}> #{msg}" }
+            conn.puts "[#{sent_at}] me> #{msg}"
           end
         end
       end
-
-      @server.close
     end
   end
 end
