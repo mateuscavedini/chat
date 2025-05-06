@@ -16,24 +16,24 @@ module Chat
       puts 'server running'
 
       loop do
-        session, _ = @server.accept
+        conn, _ = @server.accept
 
         Thread.new do
-          username = session.gets(chomp: true).to_sym
+          username = conn.gets(chomp: true).to_sym
 
           @mutex.synchronize do
-            @connections[username] = session
+            @connections[username] = conn
             puts "online users: #{@connections.keys}"
           end
 
           loop do
-            command_str = session.gets chomp: true
+            command_str = conn.gets chomp: true
             command, receiver, msg = command_str.split ' ', 3
 
             if command.eql? '/s'
               sent_at = Time.now.strftime '%H:%M:%S'
               @mutex.synchronize { @connections[receiver.to_sym].puts "[#{sent_at}] #{username}> #{msg}" }
-              session.puts "[#{sent_at}] me> #{msg}"
+              conn.puts "[#{sent_at}] me> #{msg}"
             end
           end
         end
