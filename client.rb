@@ -11,8 +11,15 @@ module Chat
     def start
       @client.connect Socket.pack_sockaddr_in @port, @host
 
-      print 'Insert your username: '
-      username = gets.chomp
+      username = nil
+      loop do
+        print 'Insert your username: '
+        username = gets.chomp
+        break unless username.nil? || username.empty?
+
+        puts "Error: username can't be blank\n\n"
+      end
+
       @client.puts username
 
       Thread.new do
