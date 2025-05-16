@@ -11,16 +11,14 @@ module Chat
     def start
       @client.connect Socket.pack_sockaddr_in @port, @host
 
-      username = nil
       loop do
-        print 'Insert your username: '
-        username = gets.chomp
-        break unless username.nil? || username.empty?
+        username = set_username
 
-        puts "Error: username can't be blank\n\n"
+        server_response = @client.gets chomp: true
+        puts server_response
+
+        break if server_response.eql? "Connected as #{username}."
       end
-
-      @client.puts username
 
       Thread.new do
         loop { puts @client.gets }
@@ -31,6 +29,23 @@ module Chat
         print "\e[A\e[K"
         @client.puts command_str
       end
+    end
+
+    private
+
+    def set_username
+      username = nil
+      loop do
+        print 'Insert your username: '
+        username = gets.chomp
+        break unless username.nil? || username.empty?
+
+        puts "Error: username can't be blank."
+      end
+
+      @client.puts username
+
+      username
     end
   end
 end
