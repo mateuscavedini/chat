@@ -24,7 +24,15 @@ module Chat
     private
 
     def set_username(conn)
-      username = conn.gets(chomp: true).to_sym
+      username = nil
+      loop do
+        username = conn.gets(chomp: true)&.to_sym
+
+        valid, message = validate_username username
+        conn.puts message
+
+        break if valid
+      end
 
       @mutex.synchronize do
         @connections[username] = conn
@@ -32,6 +40,16 @@ module Chat
       end
 
       username
+    end
+
+    def username_exists?(username)
+      @mutex.synchronize { @connections.keys.include? username }
+    end
+
+    def validate_username(username)
+      return [false, "Error: username can't be blank."] if username.nil? || username.empty?
+      return [false, 'Error: username already taken.'] if username_exists? username
+      return [true, "Connected as #{username}."]
     end
 
     def handle_conn(conn)
